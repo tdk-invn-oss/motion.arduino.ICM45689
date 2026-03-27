@@ -24,6 +24,7 @@
 //#define PRINT_ACCEL
 //#define PRINT_GYRO
 //#define PRINT_MAG
+//#define PRINT_BIAS
 
 // Instantiate an ICM456XX with LSB address set to 0
 ICM456xx IMU(Wire, 0);
@@ -69,7 +70,7 @@ void loop() {
   if (irq_received) {
     irq_received = 0;
 
-    float W, X, Y, Z;
+    float W, X, Y, Z, accuracy;
 
     if (algo == ALGO_GRV)
     {
@@ -77,11 +78,11 @@ void loop() {
       Serial.print("GRV ");
     } else if (algo == ALGO_GMRV)
     {
-      IMU.getGaf_GMRVData(W, X, Y, Z);
+      IMU.getGaf_GMRVData(W, X, Y, Z, accuracy);
       Serial.print("GMRV ");
     } else if (algo == ALGO_RV)
     {
-      IMU.getGaf_RVData(W, X, Y, Z);
+      IMU.getGaf_RVData(W, X, Y, Z, accuracy);
       Serial.print("RV ");
     }
 
@@ -95,9 +96,14 @@ void loop() {
     Serial.print(Y);
     Serial.print(",");
     Serial.print("Z:");
-    Serial.print(Z);
+    Serial.print(Z); 
+    if (algo != ALGO_GRV){
+      Serial.print(",");
+      Serial.print("Accuracy:");
+      Serial.print(accuracy);
+    }
     Serial.print(" ");
-
+    
 #ifdef PRINT_MAG
     if (algo == ALGO_GMRV || algo == ALGO_RV) {
       IMU.getGaf_RMData(X, Y, Z);
@@ -111,6 +117,25 @@ void loop() {
       Serial.print(Z);
       Serial.print(" ");
     }
+#endif
+
+#ifdef PRINT_BIAS
+    int bx,by,bz,gaf_acc;
+    // Read bias(q16) and accuracy for gyro(GYRO), mag(MAG)
+    IMU.getGaf_BiasData(GYRO, bx, by, bz, gaf_acc);
+
+    Serial.print("Bias_X:");
+    Serial.print(bx);
+    Serial.print(",");
+    Serial.print("Bias_Y:");      
+    Serial.print(by);
+    Serial.print(",");
+    Serial.print("Bias_Z:");      
+    Serial.print(bz);
+    Serial.print(",");
+    Serial.print("Accuracy:");
+    Serial.print(gaf_acc);
+    Serial.print(" ");
 #endif
 
     inv_imu_sensor_data_t imu_data;
